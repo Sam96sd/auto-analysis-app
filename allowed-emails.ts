@@ -6,5 +6,7 @@
  * بعد الحفظ والرفع على GitHub يتحدث الموقع خلال دقيقة، ومن يُحذف يُمنع فوراً.
  */
 export const allowedEmailsText = `
-samersaad040@gmail.com   # سامر
-`;
+ samersaad040@gmail.com   # سامر
+   mmelhem455@gmail.com       # ملحم
+   client.name@gmail.com
+   `;
