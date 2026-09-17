@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ExtendedAnalysis, ExtraIndicators, MultiTimeframe, ReportBody, ReportHeader } from "@/components/Report";
 import type { AnalysisReport, AssetKey, Timeframe } from "@/lib/types";
+import { siteConfig } from "@/site.config";
 
 const ASSET_OPTIONS: { key: AssetKey; label: string; symbol: string }[] = [
   { key: "XAU_USD", label: "الذهب", symbol: "XAU/USD" },
@@ -112,17 +113,17 @@ export default function Home() {
       {/* رأس المحادثة */}
       <header className="z-10 flex items-center gap-3 bg-tg-panel px-3 py-2.5 shadow-md">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-indigo-600 text-xl">
-          🤖
+          {siteConfig.botAvatar}
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-[15px] font-bold">بوت التحليل الفني الآلي</h1>
+          <h1 className="truncate text-[15px] font-bold">{siteConfig.botName}</h1>
           <p className="truncate text-xs text-tg-accent">
             {loading || refreshing ? (
               <span className="typing">
                 يكتب<span>.</span><span>.</span><span>.</span>
               </span>
             ) : (
-              "متصل الآن"
+              siteConfig.botStatus
             )}
           </p>
         </div>

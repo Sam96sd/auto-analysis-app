@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { siteConfig } from "@/site.config";
 
 export const metadata: Metadata = {
-  title: "محلل الأسواق الآلي | تحليل فني لحظي للذهب والفضة",
+  title: siteConfig.siteTitle,
   description: "تقرير تحليل فني آلي ولحظي لزوج الذهب/الدولار (XAU/USD) وأصول أخرى: المتوسطات المتحركة، RSI، ATR، ADX، MACD، الدعوم والمقاومات والسيناريوهات.",
 };
 
