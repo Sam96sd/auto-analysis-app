@@ -4,6 +4,7 @@ import { siteConfig } from "@/site.config";
 
 export const metadata: Metadata = {
   title: siteConfig.siteTitle,
+  robots: { index: false, follow: false },
   description: "تقرير تحليل فني آلي ولحظي لزوج الذهب/الدولار (XAU/USD) وأصول أخرى: المتوسطات المتحركة، RSI، ATR، ADX، MACD، الدعوم والمقاومات والسيناريوهات.",
 };
 

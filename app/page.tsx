@@ -24,6 +24,11 @@ type Panel = "extra" | "mtf" | "extended";
 /** يجلب التقرير من API Route الخاص بالتطبيق */
 async function fetchMarketData(asset: AssetKey, tf: Timeframe, signal?: AbortSignal): Promise<AnalysisReport> {
   const res = await fetch(`/api/analysis?asset=${asset}&tf=${tf}`, { cache: "no-store", signal });
+  if (res.status === 401) {
+    // انتهت الجلسة أو أُزيل الإيميل من القائمة: العودة لصفحة الدخول
+    window.location.replace("/login");
+    throw new Error("انتهت صلاحية الدخول");
+  }
   const json = await res.json();
   if (!res.ok) throw new Error(json?.error ?? `HTTP ${res.status}`);
   return json as AnalysisReport;
@@ -128,6 +133,13 @@ export default function Home() {
             )}
           </p>
         </div>
+        <a
+          href="/api/auth/logout"
+          className="rounded-full p-2 text-xs text-tg-muted transition hover:bg-white/5 hover:text-white"
+          title="تسجيل الخروج"
+        >
+          خروج
+        </a>
         <button
           onClick={refresh}
           className="rounded-full p-2 text-lg text-tg-muted transition hover:bg-white/5 hover:text-white"
