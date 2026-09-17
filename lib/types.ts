@@ -12,7 +12,7 @@ export type Timeframe = "M15" | "H1" | "H4" | "D1";
 
 export type AssetKey = "XAU_USD" | "XAG_USD" | "BTC_USD" | "EUR_USD";
 
-export type DataSource = "twelvedata" | "yahoo" | "demo";
+export type DataSource = "twelvedata" | "binance" | "yahoo" | "demo";
 
 export type Mark = "✅" | "⚠️" | "❌";
 

@@ -49,7 +49,8 @@ export function ReportHeader({ r, localTime }: { r: AnalysisReport; localTime: s
 function SourceBadge({ r }: { r: AnalysisReport }) {
   const map = {
     twelvedata: { label: "بيانات حية", cls: "bg-emerald-500/15 text-emerald-300" },
-    yahoo: { label: "بيانات حقيقية (قد تتأخر)", cls: "bg-sky-500/15 text-sky-300" },
+    binance: { label: "مصدر احتياطي", cls: "bg-sky-500/15 text-sky-300" },
+    yahoo: { label: "مصدر احتياطي (قد يتأخر)", cls: "bg-sky-500/15 text-sky-300" },
     demo: { label: "وضع تجريبي", cls: "bg-amber-500/15 text-amber-300" },
   } as const;
   const s = map[r.source];
@@ -74,8 +75,8 @@ export function ReportBody({ r }: { r: AnalysisReport }) {
 
   return (
     <div className="space-y-4 text-[13.5px] leading-7">
-      {r.source === "demo" && (
-        <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs leading-6 text-amber-200">{r.sourceNote}</p>
+      {r.source !== "twelvedata" && (
+        <p className={`rounded-lg px-3 py-2 text-xs leading-6 ${r.source === "demo" ? "bg-amber-500/10 text-amber-200" : "bg-sky-500/10 text-sky-200"}`}>{r.sourceNote}</p>
       )}
 
       <Section title="🧭 الخلاصة التنفيذية">

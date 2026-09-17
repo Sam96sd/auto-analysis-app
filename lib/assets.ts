@@ -7,6 +7,10 @@ export interface AssetConfig {
   decimals: number;
   /** رمز Twelve Data */
   twelveSymbol: string;
+  /** رمز Binance الاحتياطي (null = غير متوفر) */
+  binanceSymbol: string | null;
+  /** ملاحظة تظهر عند استخدام Binance */
+  binanceNote: string;
   /** رمز Yahoo Finance (للذهب والفضة نستخدم العقود الآجلة لأن السعر الفوري غير متاح مجاناً) */
   yahooSymbol: string;
   /** هل يتداول الأصل 24/7 (العملات الرقمية) */
@@ -22,6 +26,8 @@ export const ASSETS: Record<AssetKey, AssetConfig> = {
     symbol: "XAU/USD",
     decimals: 2,
     twelveSymbol: "XAU/USD",
+    binanceSymbol: "PAXGUSDT",
+    binanceNote: "الذهب عبر PAXG/USDT — سعر تقريبي قريب جداً من الفوري",
     yahooSymbol: "GC=F",
     alwaysOpen: false,
     demoPrice: 3650,
@@ -32,6 +38,8 @@ export const ASSETS: Record<AssetKey, AssetConfig> = {
     symbol: "XAG/USD",
     decimals: 3,
     twelveSymbol: "XAG/USD",
+    binanceSymbol: null,
+    binanceNote: "",
     yahooSymbol: "SI=F",
     alwaysOpen: false,
     demoPrice: 42,
@@ -42,6 +50,8 @@ export const ASSETS: Record<AssetKey, AssetConfig> = {
     symbol: "BTC/USD",
     decimals: 2,
     twelveSymbol: "BTC/USD",
+    binanceSymbol: "BTCUSDT",
+    binanceNote: "BTC/USDT",
     yahooSymbol: "BTC-USD",
     alwaysOpen: true,
     demoPrice: 110000,
@@ -52,6 +62,8 @@ export const ASSETS: Record<AssetKey, AssetConfig> = {
     symbol: "EUR/USD",
     decimals: 5,
     twelveSymbol: "EUR/USD",
+    binanceSymbol: "EURUSDT",
+    binanceNote: "EUR/USDT — سعر تقريبي",
     yahooSymbol: "EURUSD=X",
     alwaysOpen: false,
     demoPrice: 1.17,
