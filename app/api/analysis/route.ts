@@ -4,7 +4,7 @@ import { buildReport } from "@/lib/analysis";
 import { fetchMarketData } from "@/lib/market-data";
 import type { Timeframe } from "@/lib/types";
 
-const TIMEFRAMES: Timeframe[] = ["H1", "H4", "D1"];
+const TIMEFRAMES: Timeframe[] = ["M15", "H1", "H4", "D1"];
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;

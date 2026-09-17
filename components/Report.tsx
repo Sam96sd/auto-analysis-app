@@ -193,7 +193,7 @@ export function ExtraIndicators({ r }: { r: AnalysisReport }) {
         <Kv k="بولنجر العلوي" v={fmt(p.bbUpper, d)} />
         <Kv k="بولنجر السفلي" v={fmt(p.bbLower, d)} />
         <Kv k="نقطة الارتكاز اليومية" v={fmt(r.zones.pivot, d)} />
-        <Kv k="SMA200 يومي" v={fmt(r.timeframes[2].sma200, d)} />
+        <Kv k="SMA200 يومي" v={fmt(r.timeframes.find((t) => t.tf === "D1")?.sma200, d)} />
       </div>
       <div>
         <p className="mb-1 text-xs text-tg-muted">
@@ -242,7 +242,7 @@ export function MultiTimeframe({ r }: { r: AnalysisReport }) {
             <tr className="text-tg-muted">
               <th className="p-1.5 text-right font-medium">المؤشر</th>
               {r.timeframes.map((t) => (
-                <th key={t.tf} className="p-1.5 text-center font-medium">{t.tf === "D1" ? "يومي" : t.tf}</th>
+                <th key={t.tf} className="p-1.5 text-center font-medium">{t.tf === "D1" ? "يومي" : t.tf === "M15" ? "15د" : t.tf}</th>
               ))}
             </tr>
           </thead>

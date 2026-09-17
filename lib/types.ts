@@ -8,7 +8,7 @@ export type Candle = {
   v: number;
 };
 
-export type Timeframe = "H1" | "H4" | "D1";
+export type Timeframe = "M15" | "H1" | "H4" | "D1";
 
 export type AssetKey = "XAU_USD" | "XAG_USD" | "BTC_USD" | "EUR_USD";
 

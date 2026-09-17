@@ -11,6 +11,7 @@ export interface MarketData {
   source: DataSource;
   sourceNote: string;
   price: number;
+  m15: Candle[];
   h1: Candle[];
   h4: Candle[];
   d1: Candle[];
@@ -82,16 +83,18 @@ async function tdSeries(symbol: string, interval: string, size: number, key: str
 }
 
 async function fromTwelveData(asset: AssetConfig, key: string): Promise<MarketData> {
-  const [h1, h4, d1] = await Promise.all([
+  const [m15, h1, h4, d1] = await Promise.all([
+    tdSeries(asset.twelveSymbol, "15min", 300, key),
     tdSeries(asset.twelveSymbol, "1h", 300, key),
     tdSeries(asset.twelveSymbol, "4h", 300, key),
     tdSeries(asset.twelveSymbol, "1day", 300, key),
   ]);
-  assertEnough(h1, h4, d1);
+  assertEnough(m15, h1, h4, d1);
   return {
     source: "twelvedata",
     sourceNote: "بيانات حية من Twelve Data (سعر فوري)",
-    price: h1[h1.length - 1].c,
+    price: m15[m15.length - 1].c,
+    m15,
     h1,
     h4,
     d1,
@@ -111,7 +114,7 @@ interface YahooChart {
   };
 }
 
-async function yahooSeries(symbol: string, interval: "1h" | "1d", range: string) {
+async function yahooSeries(symbol: string, interval: "15m" | "1h" | "1d", range: string) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}`;
   const res = await fetch(url, {
     cache: "no-store",
@@ -135,15 +138,17 @@ async function yahooSeries(symbol: string, interval: "1h" | "1d", range: string)
 }
 
 async function fromYahoo(asset: AssetConfig): Promise<MarketData> {
-  const [hourly, daily] = await Promise.all([
+  const [quarter, hourly, daily] = await Promise.all([
+    yahooSeries(asset.yahooSymbol, "15m", "10d"),
     yahooSeries(asset.yahooSymbol, "1h", "60d"),
     yahooSeries(asset.yahooSymbol, "1d", "2y"),
   ]);
   const h1 = hourly.candles;
   const h4 = aggregate(h1, 4 * HOUR);
   const d1 = daily.candles;
-  assertEnough(h1, h4, d1);
-  const price = hourly.price ?? h1[h1.length - 1].c;
+  const m15 = quarter.candles;
+  assertEnough(m15, h1, h4, d1);
+  const price = quarter.price ?? hourly.price ?? m15[m15.length - 1].c;
   const futures = asset.yahooSymbol.endsWith("=F");
   return {
     source: "yahoo",
@@ -151,6 +156,7 @@ async function fromYahoo(asset: AssetConfig): Promise<MarketData> {
       ? `بيانات Yahoo Finance (عقود ${asset.yahooSymbol} الآجلة — قد تختلف قليلاً عن السعر الفوري وقد تتأخر حتى 15 دقيقة)`
       : "بيانات Yahoo Finance (قد تتأخر حتى 15 دقيقة)",
     price,
+    m15,
     h1,
     h4,
     d1,
@@ -175,9 +181,9 @@ export function aggregate(candles: Candle[], bucketMs: number): Candle[] {
   return out;
 }
 
-function assertEnough(h1: Candle[], h4: Candle[], d1: Candle[]) {
-  if (h1.length < 60 || h4.length < 60 || d1.length < 60) {
-    throw new Error(`بيانات تاريخية غير كافية (H1=${h1.length}, H4=${h4.length}, D1=${d1.length})`);
+function assertEnough(m15: Candle[], h1: Candle[], h4: Candle[], d1: Candle[]) {
+  if (m15.length < 60 || h1.length < 60 || h4.length < 60 || d1.length < 60) {
+    throw new Error(`بيانات تاريخية غير كافية (M15=${m15.length}, H1=${h1.length}, H4=${h4.length}, D1=${d1.length})`);
   }
 }
 
@@ -195,35 +201,37 @@ function mulberry32(seed: number) {
 
 /** سلسلة سعرية اصطناعية ثابتة لكل ساعة (لا تتغير عشوائياً مع كل تحديث) */
 export function demoData(asset: AssetConfig): MarketData {
-  const nowHour = Math.floor(Date.now() / HOUR) * HOUR;
-  const count = 24 * 400;
+  const Q = 15 * 60_000;
+  const nowQ = Math.floor(Date.now() / Q) * Q;
+  const count = 96 * 400;
   const rand = mulberry32([...asset.key].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7));
-  const vol = 0.0022;
+  const vol = 0.0011;
   const raw: number[] = [];
   let p = 1;
   for (let i = 0; i < count; i++) {
-    p *= 1 + (rand() - 0.5) * 2 * vol + Math.sin(i / 300) * 0.0002;
+    p *= 1 + (rand() - 0.5) * 2 * vol + Math.sin(i / 1200) * 0.0001;
     raw.push(p);
   }
   const scale = asset.demoPrice / raw[raw.length - 1];
-  const h1: Candle[] = raw.map((close, i) => {
+  const m15All: Candle[] = raw.map((close, i) => {
     const c = close * scale;
     const o = (i ? raw[i - 1] : close) * scale;
     const wick = c * vol * rand();
-    return { t: nowHour - (count - 1 - i) * HOUR, o, h: Math.max(o, c) + wick, l: Math.min(o, c) - wick, c, v: 0 };
+    return { t: nowQ - (count - 1 - i) * Q, o, h: Math.max(o, c) + wick, l: Math.min(o, c) - wick, c, v: 0 };
   });
   // حركة بسيطة داخل الدقيقة الحالية حتى يبدو السعر حياً
-  const minuteJitter = Math.sin(Date.now() / 60_000) * asset.demoPrice * 0.0004;
-  const lastC = h1[h1.length - 1];
-  lastC.c += minuteJitter;
+  const lastC = m15All[m15All.length - 1];
+  lastC.c += Math.sin(Date.now() / 60_000) * asset.demoPrice * 0.0004;
   lastC.h = Math.max(lastC.h, lastC.c);
   lastC.l = Math.min(lastC.l, lastC.c);
+  const recent = m15All.slice(-96 * 60);
   return {
     source: "demo",
     sourceNote: "⚠️ بيانات تجريبية (غير حقيقية)",
     price: lastC.c,
-    h1: h1.slice(-24 * 60),
-    h4: aggregate(h1.slice(-24 * 60), 4 * HOUR),
-    d1: aggregate(h1, 24 * HOUR),
+    m15: m15All.slice(-96 * 5),
+    h1: aggregate(recent, HOUR),
+    h4: aggregate(recent, 4 * HOUR),
+    d1: aggregate(m15All, 24 * HOUR),
   };
 }

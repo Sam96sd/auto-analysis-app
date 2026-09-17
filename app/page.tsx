@@ -12,6 +12,7 @@ const ASSET_OPTIONS: { key: AssetKey; label: string; symbol: string }[] = [
   { key: "EUR_USD", label: "اليورو", symbol: "EUR/USD" },
 ];
 const TF_OPTIONS: { key: Timeframe; label: string }[] = [
+  { key: "M15", label: "ربع ساعة" },
   { key: "H1", label: "ساعة" },
   { key: "H4", label: "4 ساعات" },
   { key: "D1", label: "يومي" },

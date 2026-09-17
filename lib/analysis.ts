@@ -133,11 +133,13 @@ export function buildReport(asset: AssetConfig, data: MarketData, primaryTf: Tim
   const f = (n: number) => iso(fmt(n, d));
 
   const series = {
+    M15: withLivePrice(data.m15, price),
     H1: withLivePrice(data.h1, price),
     H4: withLivePrice(data.h4, price),
     D1: withLivePrice(data.d1, price),
   };
   const snaps: Record<Timeframe, TimeframeSnapshot> = {
+    M15: snapshot("M15", series.M15),
     H1: snapshot("H1", series.H1),
     H4: snapshot("H4", series.H4),
     D1: snapshot("D1", series.D1),
@@ -156,6 +158,7 @@ export function buildReport(asset: AssetConfig, data: MarketData, primaryTf: Tim
   type Sig = { w: number; v: 1 | -1 | 0 };
   const sigs: Sig[] = [];
   const cmp = (a: number | null, b: number | null): 1 | -1 | 0 => (a === null || b === null ? 0 : a > b ? 1 : a < b ? -1 : 0);
+  sigs.push({ w: 0.5, v: cmp(price, snaps.M15.ema20) }, { w: 0.5, v: cmp(snaps.M15.ema20, snaps.M15.ema50) });
   sigs.push({ w: 1, v: cmp(price, snaps.H1.ema20) }, { w: 1, v: cmp(snaps.H1.ema20, snaps.H1.ema50) });
   sigs.push({ w: 1.5, v: cmp(price, snaps.H4.ema20) }, { w: 1.5, v: cmp(snaps.H4.ema20, snaps.H4.ema50) });
   sigs.push({ w: 2, v: cmp(price, snaps.D1.sma50) }, { w: 2, v: cmp(snaps.D1.sma50, snaps.D1.sma200) });
@@ -169,12 +172,12 @@ export function buildReport(asset: AssetConfig, data: MarketData, primaryTf: Tim
   const confluence = round((Math.max(bull, bear) / total) * 100, 1);
 
   /* ---- الاتجاه العام من ترتيب السعر مع المتوسطات ---- */
-  const biases = [snaps.H1.bias, snaps.H4.bias, snaps.D1.bias];
+  const biases = [snaps.M15.bias, snaps.H1.bias, snaps.H4.bias, snaps.D1.bias];
   const upCount = biases.filter((b) => b === "صاعد").length;
   const downCount = biases.filter((b) => b === "هابط").length;
   const biasAgree = direction === "صاعد" ? upCount : downCount;
   const trend: "صاعد" | "هابط" | "عرضي" =
-    confluence >= 60 || (confluence >= 50 && biasAgree >= 2) ? direction : "عرضي";
+    confluence >= 60 || (confluence >= 50 && biasAgree >= 3) ? direction : "عرضي";
 
   const momentum =
     rsiV >= 70 ? "قوي صاعد (تشبع شرائي) 🔥"
@@ -204,8 +207,8 @@ export function buildReport(asset: AssetConfig, data: MarketData, primaryTf: Tim
   const components: { name: string; mark: Mark; note: string }[] = [
     {
       name: "الاتجاه",
-      mark: trendAgree === 3 ? "✅" : trendAgree === 2 ? "⚠️" : "❌",
-      note: `${trendAgree}/3 إطارات متوافقة مع الاتجاه ${direction} (H1: ${snaps.H1.bias}، H4: ${snaps.H4.bias}، D1: ${snaps.D1.bias})`,
+      mark: trendAgree >= 3 ? "✅" : trendAgree === 2 ? "⚠️" : "❌",
+      note: `${trendAgree}/4 إطارات متوافقة مع الاتجاه ${direction} (M15: ${snaps.M15.bias}، H1: ${snaps.H1.bias}، H4: ${snaps.H4.bias}، D1: ${snaps.D1.bias})`,
     },
     {
       name: "الزخم",
@@ -325,7 +328,7 @@ export function buildReport(asset: AssetConfig, data: MarketData, primaryTf: Tim
     return `على ${iso(s.tf)} يتداول السعر ${a} EMA20 (${f(s.ema20)}) و${b} EMA50 (${f(s.ema50)})`;
   };
   const justification =
-    `يتداول ${iso(asset.symbol)} عند ${f(price)}. ${posMA(snaps.H1)}، و${posMA(snaps.H4)}. ` +
+    `يتداول ${iso(asset.symbol)} عند ${f(price)}. ${primaryTf === "M15" ? `${posMA(snaps.M15)}، ` : ""}${posMA(snaps.H1)}، و${posMA(snaps.H4)}. ` +
     `يسجّل مؤشر RSI(14) على ${iso(primaryTf)} قراءة ${iso(rsiV.toFixed(1))} ما يعكس زخماً بوصف «${momentum}»، ` +
     `بينما يبلغ ADX(14) ${iso(adxV.toFixed(1))} لتُصنَّف حالة السوق «${marketState}». ` +
     `يبعد السعر ${pct(R1.distancePct)} عن المقاومة الأقرب ${f(R1.price)} و${pct(S1.distancePct)} عن الدعم الأقرب ${f(S1.price)}، ` +
@@ -367,7 +370,7 @@ export function buildReport(asset: AssetConfig, data: MarketData, primaryTf: Tim
     source: data.source,
     sourceNote: data.sourceNote,
     generatedAt: now.toISOString(),
-    lastCandleAt: new Date(data.h1[data.h1.length - 1].t).toISOString(),
+    lastCandleAt: new Date(data.m15[data.m15.length - 1].t).toISOString(),
     primaryTf,
     price: round(price, d),
     changePct: round(((price - prevClose) / prevClose) * 100, 2),
@@ -393,7 +396,7 @@ export function buildReport(asset: AssetConfig, data: MarketData, primaryTf: Tim
     recommendation,
     justification,
     extended,
-    timeframes: [snaps.H1, snaps.H4, snaps.D1].map((s) => ({
+    timeframes: [snaps.M15, snaps.H1, snaps.H4, snaps.D1].map((s) => ({
       ...s,
       ...Object.fromEntries(
         Object.entries(s).map(([k, v]) => [k, typeof v === "number" ? round(v, ["rsi", "adx", "plusDI", "minusDI"].includes(k) ? 1 : d) : v]),
