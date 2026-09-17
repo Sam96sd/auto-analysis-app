@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🤖 محلل الأسواق الآلي — Auto Analysis App
 
-## Getting Started
+تطبيق ويب بواجهة تشبه محادثة تيليجرام، يولّد **تقرير تحليل فني لحظي** لزوج الذهب/الدولار (XAU/USD) وأصول أخرى (الفضة، البيتكوين، اليورو) بناءً على بيانات السوق لحظة فتح الصفحة.
 
-First, run the development server:
+مبني بـ **Next.js 16 + React 19 + TailwindCSS 4 + TypeScript**، والمؤشرات تُحسب داخل الخادم من الشموع التاريخية (OHLCV) دون مكتبات خارجية.
+
+## ✨ ما يحتويه التقرير
+
+| القسم | المحتوى |
+| --- | --- |
+| رأس التقرير | الأصل، التاريخ والوقت من متصفح المستخدم، السعر الحالي ونسبة التغير |
+| الخلاصة التنفيذية | الاتجاه العام، الزخم (RSI)، التذبذب (ATR)، حالة السوق (ADX)، درجة التوافق %، التفكيك بالمكونات ✅⚠️❌، ملاحظة الجلسة |
+| المناطق المهمة | الدعم والمقاومة الأقرب + مستويان تاليان لكل منهما، وفقرة منطقة السيولة (تجميع/تصريف) |
+| السيناريوهات الشرطية | الإيجابي والهابط مع الأهداف ونقاط الإبطال |
+| هل الانتظار أفضل؟ | منطق If/Else على ADX ودرجة التوافق وحالة السوق |
+| سبب الترجيح الفني | فقرة مولّدة بالأرقام الحية (EMA على H1/H4، RSI، ADX، المسافة % للدعم/المقاومة) |
+| أزرار تفاعلية | مؤشرات مكملة (MACD، DI، بولنجر، فيبوناتشي) · فريمات متعددة · توسيع التحليل |
+
+**المؤشرات المحسوبة:** SMA/EMA (H1, H4, D1) · RSI 14 · ATR 14 · ADX 14 (+DI/−DI) · MACD 12/26/9 · Bollinger 20/2 · Pivot Points · القمم والقيعان (Fractals).
+
+## 📡 مصادر البيانات (بالترتيب)
+
+1. **Twelve Data** — إذا وضعت `TWELVE_DATA_API_KEY` (مفتاح مجاني). يعطي السعر الفوري للذهب XAU/USD. ✅ مستحسن.
+2. **Yahoo Finance** — بدون مفتاح. الذهب والفضة عبر العقود الآجلة (`GC=F`, `SI=F`) لذلك قد يختلف السعر قليلاً عن الفوري، وقد يتأخر حتى 15 دقيقة.
+3. **بيانات تجريبية** — إذا فشل المصدران، مع شارة «وضع تجريبي» وتنبيه واضح في التقرير.
+
+> ملاحظة: Yahoo قد يحجب طلبات بعض خوادم الاستضافة السحابية، لذا يُنصح بمفتاح Twelve Data عند النشر.
+> الخطة المجانية في Twelve Data تسمح بـ 8 طلبات/دقيقة، والتطبيق يستهلك 3 طلبات لكل تحديث مع تخزين مؤقت 55 ثانية.
+
+## 🚀 التشغيل محلياً
+
+المتطلبات: Node.js 20.9 أو أحدث.
 
 ```bash
+npm install
+cp .env.example .env.local   # ثم ضع مفتاح Twelve Data (اختياري)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+افتح http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ☁️ الرفع على GitHub
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/USERNAME/auto-analysis-app.git
+git push -u origin main
+```
 
-## Learn More
+الملفات الكبيرة (`node_modules`, `.next`) و`.env.local` مستثناة تلقائياً عبر `.gitignore`. عند كل push يعمل فحص CI (lint + typecheck + build) من `.github/workflows/ci.yml`.
 
-To learn more about Next.js, take a look at the following resources:
+## 🌐 النشر على Vercel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. من [vercel.com/new](https://vercel.com/new) اختر المستودع.
+2. في **Environment Variables** أضف `TWELVE_DATA_API_KEY`.
+3. اضغط Deploy.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🗂️ هيكل المشروع
 
-## Deploy on Vercel
+```
+app/
+  api/analysis/route.ts   ← GET /api/analysis?asset=XAU_USD&tf=H4  (يُرجع التقرير JSON)
+  layout.tsx, page.tsx    ← الواجهة (عربية RTL، وضع ليلي، متجاوبة)
+  globals.css
+components/Report.tsx     ← أقسام التقرير والأزرار الإضافية
+lib/
+  assets.ts               ← الأصول المدعومة ورموزها لدى كل مزود
+  market-data.ts          ← جلب الشموع + الاحتياطي + التخزين المؤقت
+  indicators.ts           ← SMA, EMA, RSI, ATR, ADX, MACD, Bollinger, Pivots, Fractals
+  analysis.ts             ← محرك توليد التقرير والنصوص
+  types.ts
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+لإضافة أصل جديد: أضفه في `lib/assets.ts` وفي `ASSET_OPTIONS` داخل `app/page.tsx`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ⚠️ إخلاء مسؤولية
+
+التقرير مولَّد آلياً من معادلات رياضية ولا يُعد نصيحة استثمارية.
